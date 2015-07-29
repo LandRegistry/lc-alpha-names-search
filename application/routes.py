@@ -1,6 +1,5 @@
 from application import app
 from flask import Response, request
-import requests
 from elasticsearch import Elasticsearch
 import logging
 import json
@@ -32,7 +31,7 @@ def add_index_entry():
 def get_all():
     result = elastic.search(index='index', body={'query': {'match_all': {}}})
 
-    logging.info("Got %d hits".format(result['hits']['total']))
+    logging.info("Got {} hits".format(result['hits']['total']))
     logging.info(result)
 
     return_data = []
