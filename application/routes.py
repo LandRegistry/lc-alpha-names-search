@@ -31,7 +31,7 @@ def add_index_entry():
 def get_all():
     result = elastic.search(index='index', body={'query': {'match_all': {}}})
 
-    logging.info("Got {} hits".format(result['hits']['total']))
+    logging.info("Got %d hits", result['hits']['total'])
     logging.info(result)
 
     return_data = []
