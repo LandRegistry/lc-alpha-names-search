@@ -1,4 +1,4 @@
-from application.routes import app, elastic
+from application.routes import app
 from unittest import mock
 import json
 
@@ -23,6 +23,7 @@ returndata = {
         ]
     }
 }
+
 
 class TestWorking:
     def setup_method(self, method):
