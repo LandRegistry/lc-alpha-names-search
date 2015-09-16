@@ -8,21 +8,21 @@ index_entry = '[{"office": "Willborough Office", "sub_register": "Proprietorship
               '"title_number": "FT80668"}]'
 
 returndata = {
-            'hits': {
-                'total': 1,
-                'hits': [
-                    {
-                        '_source': {
-                            "office": "Willborough Office",
-                            "sub_register": "Proprietorship",
-                            "registered_proprietor": "Kristoffer Demarco Koepp",
-                            "name_type": "Standard",
-                            "title_number": "FT80668"
-                        }
-                    }
-                ]
+    'hits': {
+        'total': 1,
+        'hits': [
+            {
+                '_source': {
+                    "office": "Willborough Office",
+                    "sub_register": "Proprietorship",
+                    "registered_proprietor": "Kristoffer Demarco Koepp",
+                    "name_type": "Standard",
+                    "title_number": "FT80668"
+                }
             }
-        }
+        ]
+    }
+}
 
 class TestWorking:
     def setup_method(self, method):
