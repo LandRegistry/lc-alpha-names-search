@@ -1,0 +1,63 @@
+Phonetic Full Name Search:
+
+{
+    "size": 10,
+    "min_score": 3,
+    "query": {
+        "bool": {
+            "must": [ {
+                "match": {
+                    "forenames.phonetic": {
+                        "query": "Tracey Lyla"
+                    }
+                } }, {
+                "match": {
+                    "surname.phonetic": {
+                        "query": "Steuber"
+                    }
+                } }
+            ], "minimum_should_match": 2
+        }
+    }
+}
+
+Levenshtein Distance
+
+{
+    "size": 10000,
+    "query": {
+        "fuzzy": {
+            "surname": {
+                "value": "Dillert",
+                "fuzziness": 3
+            }
+        }
+    }
+}
+
+Combined
+
+{
+    "size": 1000,
+    "min_score": 3,
+    "query": {
+        "bool": {
+            "must": [ {
+                "match": {
+                    "forenames.phonetic": {
+                        "query": "Tracey Lyla"
+                    }
+                } }, {
+                "match": {
+                    "surname.phonetic": {
+                        "query": "Steuber"
+                    }
+                } }, {
+                "fuzzy": {
+                    "surname": { "value": "Steuber", "fuzziness": 3 }
+                }
+                }
+            ], "minimum_should_match": 2
+        }
+    }
+}
