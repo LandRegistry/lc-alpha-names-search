@@ -7,8 +7,9 @@ class Config(object):
 
 class DevelopmentConfig(object):
     DEBUG = True
-    B2B_PROCESSOR_URL = "http://localhost:5002"
+    SEARCH_TYPE = 'phonetic'  # distance, combined
 
 
 class PreviewConfig(object):
-    pass
+    DEBUG = False
+    SEARCH_TYPE = 'phonetic'
