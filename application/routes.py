@@ -3,13 +3,31 @@ from flask import Response, request
 from application.search import elastic, phonetic_search, distance_search, combined_search
 import logging
 import json
-
-
+import requests
 
 
 @app.route('/', methods=["GET"])
 def index():
     return Response(status=200)
+
+
+@app.route('/health', methods=['GET'])
+def healthcheck():
+    result = {
+        'status': 'OK',
+        'dependencies': []
+    }
+
+    es_response = requests.get(app.config['ELASTICSEARCH_URL'])
+    if es_response.status_code == 200:
+        status = 200
+    else:
+        status = 500
+    result['dependencies'].append({
+        'elasticsearch': str(es_response.status_code) + ' ' + es_response.reason
+    })
+
+    return Response(json.dumps(result), status=status, mimetype='application/json')
 
 
 @app.route('/names', methods=['POST'])
@@ -18,25 +36,24 @@ def add_index_entry():
         return Response(status=415)
 
     data = request.get_json(force=True)
-    # Data structure coming in isn't quite how we want to index it...
-    index_item = {
-        'title_number': data['title_number'],
-        'office': data['office'],
-        'sub_register': data['sub_register'],
-        'name_type': data['name_type']
-    }
-
-    if data['name_type'] == 'Private':
-        index_item['forenames'] = " ".join(data['registered_proprietor']['forenames'])
-        index_item['surname'] = data['registered_proprietor']['surname']
-        index_item['full_name'] = index_item['forenames'] + ' ' + index_item['surname']
-    else:  # Bankruptcies can't be against companies, etc.
-        return Response(status=501)
 
     logging.info(data)
 
     for item in data:
-        result = elastic.index(index='index', doc_type='names', body=item)
+        # Data structure coming in isn't quite how we want to index it...
+        index_item = {
+            'title_number': item['title_number'],
+            'office': item['office'],
+            'sub_register': item['sub_register'],
+            'name_type': item['name_type']
+        }
+
+        if item['name_type'] == 'Private':
+            index_item['forenames'] = " ".join(item['registered_proprietor']['forenames'])
+            index_item['surname'] = item['registered_proprietor']['surname']
+            index_item['full_name'] = index_item['forenames'] + ' ' + index_item['surname']
+
+        result = elastic.index(index='index', doc_type='names', body=index_item)
         logging.info(result['created'])
     elastic.indices.refresh(index="index")
     return Response(status=201)
@@ -67,18 +84,3 @@ def search_by_name():
 
     # TODO: process results...
     return Response(json.dumps(result), status=200, mimetype='application/json')
-
-
-
-# @app.route('/index', methods=['GET'])
-# def get_all():
-#     result = elastic.search(index='index', body={'query': {'match_all': {}}}, size=1000000)
-#
-#     logging.info("Got %d hits", result['hits']['total'])
-#     logging.info(result)
-#
-#     return_data = []
-#     for hit in result['hits']['hits']:
-#         return_data.append(hit['_source'])
-#
-#     return Response(json.dumps(return_data), status=200, mimetype='application/json')

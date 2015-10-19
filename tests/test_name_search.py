@@ -3,9 +3,27 @@ from unittest import mock
 import json
 
 
-index_entry = '[{"office": "Willborough Office", "sub_register": "Proprietorship",' + \
-              '"registered_proprietor": "Kristoffer Demarco Koepp","name_type": "Standard",' + \
-              '"title_number": "FT80668"}]'
+# index_entry = '[{"office": "Willborough Office", "sub_register": "Proprietorship",' + \
+#               '"registered_proprietor": "Kristoffer Demarco Koepp","name_type": "Standard",' + \
+#               '"title_number": "FT80668"}]'
+
+class FakeResponse(object):
+    def __init__(self, status_code=200):
+        super(FakeResponse, self).__init__()
+        self.status_code = status_code
+        self.reason = 'RS'
+
+index_entry = '[{' \
+              '    "name_type": "Private",' \
+              '    "sub_register": "B",' \
+              '    "office": "OFFICE",' \
+              '    "title_number": "ZZ826242",' \
+              '    "registered_proprietor": {' \
+              '        "forenames": ["Tracey", "Alvina"],' \
+              '        "full_name": "Tracey Alvina Johnston",' \
+              '       "surname": "Johnston"' \
+              '    }' \
+              '}]'
 
 returndata = {
     'hits': {
@@ -13,11 +31,13 @@ returndata = {
         'hits': [
             {
                 '_source': {
-                    "office": "Willborough Office",
-                    "sub_register": "Proprietorship",
-                    "registered_proprietor": "Kristoffer Demarco Koepp",
-                    "name_type": "Standard",
-                    "title_number": "FT80668"
+                    "forenames": "Tracey Alvina",
+                    "name_type": "Private",
+                    "sub_register": "B",
+                    "surname": "Johnston",
+                    "office": "OFFICE",
+                    "title_number": "ZZ826242",
+                    "full_name": "Tracey Alvina Johnston"
                 }
             }
         ]
@@ -34,23 +54,34 @@ class TestWorking:
         assert response.status_code == 200
 
     @mock.patch('application.routes.elastic')
-    def test_add_index_entry(self, mock_elastic):
-        headers = {'Content-Type': 'application/json'}
-        response = self.app.post('/entry', data=index_entry, headers=headers)
-        assert response.status_code == 201
+    @mock.patch('requests.get', return_value=FakeResponse(status_code=404))
+    @mock.patch('requests.put', return_value=FakeResponse(status_code=200))
+    def test_healthcheck(self, mock_put, mock_get, mock_elastic):
+        response = self.app.get('/health')
 
-        # Confirm that the ES APIs were called:
-        name, args, kwargs = mock_elastic.method_calls[0]  # Call to index
-        assert name == 'index'
-        assert kwargs['body']['title_number'] == 'FT80668'
+        print(dir(mock_get))
+        print(mock_get.call_count)
+        print(mock_put.call_count)
+        print(mock_elastic)
+        print(response.data)
+        assert False
 
-        name, args, kwargs = mock_elastic.method_calls[1]  # Call to indices
-        assert name == 'indices.refresh'
-        assert kwargs['index'] == 'index'
 
-    @mock.patch('application.routes.elastic.search', return_value=returndata)
-    def test_retrieve_data(self, mock_elastic):
-        response = self.app.get('/index')
-        data = json.loads(response.data.decode('utf-8'))
-        assert len(data) == 1
-        assert data[0]['title_number'] == "FT80668"
+    # @mock.patch('application.routes.elastic')
+    # @mock.patch('requests.get', return_value=FakeResponse(status_code=200))
+    # def test_add_index_entry(self, mock_get, mock_elastic):
+    #     headers = {'Content-Type': 'application/json'}
+    #     response = self.app.post('/names', data=index_entry, headers=headers)
+    #     assert response.status_code == 201
+    #
+    #     # Confirm that the ES APIs were called:
+    #     print(mock_elastic.method_calls)
+    #     print(mock_get.method_calls)
+    #     name, args, kwargs = mock_elastic.method_calls[0]  # Call to index
+    #     assert name == 'index'
+    #     assert kwargs['body']['title_number'] == 'ZZ826242'
+    #
+    #     name, args, kwargs = mock_elastic.method_calls[1]  # Call to indices
+    #     assert name == 'indices.refresh'
+    #     assert kwargs['index'] == 'index'
+    #     assert False

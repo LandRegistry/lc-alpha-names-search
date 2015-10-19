@@ -4,16 +4,6 @@ import logging
 
 elastic = Elasticsearch()
 
-#     result = elastic.search(index='index', body={'query': {'match_all': {}}}, size=1000000)
-#
-#     logging.info("Got %d hits", result['hits']['total'])
-#     logging.info(result)
-#
-#     return_data = []
-#     for hit in result['hits']['hits']:
-#         return_data.append(hit['_source'])
-#
-#     return Response(json.dumps(return_data), status=200, mimetype='application/json')
 
 def search(query):
     result = elastic.search(index='index', body=query)
@@ -21,12 +11,16 @@ def search(query):
 
     returns = []
     for item in result['hits']['hits']:
-        returns.append(item['_source'])
+        new_item = item['_source']
+        new_item['relevance'] = item['_score']
+        returns.append(new_item)
     return returns
 
 
 def phonetic_search(forename, surname):
+    # Get matches based on the double-metaphone algorithm
     query = {
+        'size': 100000000,
         'query': {
             'bool': {
                 'must': [{
@@ -50,10 +44,12 @@ def phonetic_search(forename, surname):
 
 
 def distance_search(forename, surname):
+    # Get matches based on the Levenstein distance algorithm
     forename_distance = round(len(forename) / 6)
     surname_distance = round(len(surname) / 3)
 
     query = {
+        'size': 100000000,
         'query': {
             'bool': {
                 'must': [
@@ -82,41 +78,58 @@ def distance_search(forename, surname):
 
 
 def combined_search(forename, surname):
+    # Get results based on both algorithms
     forename_distance = round(len(forename) / 6)
     surname_distance = round(len(surname) / 3)
     query = {
+        'size': 100000000,
         'query': {
             'bool': {
                 'must': [
                     {
-                        'match': {
-                            'forenames': {
-                                'query': forename,
-                                'operator': 'and',
-                                'fuzziness': str(forename_distance)
-                            }
+                        'bool': {
+                            'should': [
+                                {
+                                    'match': {
+                                        'surname': {
+                                            'query': surname,
+                                            'fuzziness': str(surname_distance)
+                                        }
+                                    }
+                                },
+                                {
+                                    'match': {
+                                        'surname.phonetic': {
+                                            'query': surname
+                                        }
+                                    }
+                                }
+                            ],
+                            'minimum_should_match': 1
                         }
                     },
                     {
-                        'match': {
-                            'surname': {
-                                'query': surname,
-                                'fuzziness': str(surname_distance)
-                            }
-                        }
-                    },
-                    {
-                        'match': {
-                            'forenames.phonetic': {
-                                'query': forename,
-                                'operator': 'and'
-                            }
-                        }
-                    }, {
-                        'match': {
-                            'surname.phonetic': {
-                                'query': surname
-                            }
+                        'bool': {
+                            'should': [
+                                {
+                                    'match': {
+                                        'forenames': {
+                                            'query': forename,
+                                            'operator': 'and',
+                                            'fuzziness': str(forename_distance)
+                                        }
+                                    }
+                                },
+                                {
+                                    'match': {
+                                        'forenames.phonetic': {
+                                            'query': forename,
+                                            'operator': 'and'
+                                        }
+                                    }
+                                }
+                            ],
+                            'minimum_should_match': 1
                         }
                     }
                 ]
