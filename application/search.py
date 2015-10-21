@@ -18,6 +18,7 @@ def search(query):
 
 
 def phonetic_search(forename, surname):
+    logging.info('Phonetic Search')
     # Get matches based on the double-metaphone algorithm
     query = {
         'size': 100000000,
@@ -44,6 +45,7 @@ def phonetic_search(forename, surname):
 
 
 def distance_search(forename, surname):
+    logging.info('Distance Search')
     # Get matches based on the Levenstein distance algorithm
     forename_distance = round(len(forename) / 6)
     surname_distance = round(len(surname) / 3)
@@ -78,6 +80,7 @@ def distance_search(forename, surname):
 
 
 def combined_search(forename, surname):
+    logging.info('Combined Search')
     # Get results based on both algorithms
     forename_distance = round(len(forename) / 6)
     surname_distance = round(len(surname) / 3)
