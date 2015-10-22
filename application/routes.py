@@ -15,7 +15,7 @@ def index():
 def healthcheck():
     result = {
         'status': 'OK',
-        'dependencies': []
+        'dependencies': {}
     }
 
     es_response = requests.get(app.config['ELASTICSEARCH_URL'])
@@ -23,9 +23,7 @@ def healthcheck():
         status = 200
     else:
         status = 500
-    result['dependencies'].append({
-        'elasticsearch': str(es_response.status_code) + ' ' + es_response.reason
-    })
+    result['dependencies']['elasticsearch'] = str(es_response.status_code) + ' ' + es_response.reason
 
     return Response(json.dumps(result), status=status, mimetype='application/json')
 
