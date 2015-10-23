@@ -1,5 +1,6 @@
 require 'json'
 require 'net/http'
+require 'uri'
 
 dir = File.dirname(__FILE__)
 csv = File.open("#{dir}/names.csv").read.split(/\r?\n/)
@@ -50,10 +51,13 @@ mapping = '{' +
 
 http = Net::HTTP.new( 'localhost', 9200 )
 
-response = http.request(Net::HTTP::Get.new("http://localhost:9200/index/_mapping/names"))
-if response.code == 404
-    http.request( Net::HTTP::Put.new( '/index' ), metaphone )
-    http.request( Net::HTTP::Put.new( '/index/_mapping/names' ), mapping )
+response = http.request(Net::HTTP::Get.new("/index/_mapping/names"))
+
+if response.code == "404"
+    r = http.request( Net::HTTP::Put.new( '/index' ), metaphone )
+    #puts r.code
+    r = http.request( Net::HTTP::Put.new( '/index/_mapping/names' ), mapping )
+    #puts r.code
 end
 
 
