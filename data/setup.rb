@@ -56,16 +56,18 @@ response = http.request(Net::HTTP::Get.new("/index/_mapping/names"))
 if response.code == "404"
     puts 'Adding mapping'
     r = http.request( Net::HTTP::Put.new( '/index' ), metaphone )
-    #puts r.code
+    puts r.code
     r = http.request( Net::HTTP::Put.new( '/index/_mapping/names' ), mapping )
-    #puts r.code
+    puts r.code
 else
     data = JSON.parse(response.body)
     forenames = data['index']['mappings']['names']['properties']['forenames']
     if forenames.key?('fields') == false
         puts 'Adding mapping to existing index'
-        http.request( Net::HTTP::Put.new( '/index' ), metaphone )
-        http.request( Net::HTTP::Put.new( '/index/_mapping/names' ), mapping )
+        r = http.request( Net::HTTP::Put.new( '/index' ), metaphone )
+        puts r.code
+        r = http.request( Net::HTTP::Put.new( '/index/_mapping/names' ), mapping )
+        puts r.code
     else
         puts 'Index exists'
     end
