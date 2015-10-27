@@ -57,8 +57,10 @@ if response.code == "404"
     puts 'Adding mapping'
     r = http.request( Net::HTTP::Put.new( '/index' ), metaphone )
     puts r.code
+    puts r.body
     r = http.request( Net::HTTP::Put.new( '/index/_mapping/names' ), mapping )
     puts r.code
+    puts r.body
 else
     data = JSON.parse(response.body)
     forenames = data['index']['mappings']['names']['properties']['forenames']
