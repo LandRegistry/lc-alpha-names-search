@@ -44,6 +44,10 @@ mapping = '{' +
     '                    "analyzer": "dbl_metaphone"' +
     '                }' +
     '            }' +
+    '        },' +
+    '        "full_name": {' +
+    '            "type": "string",' +
+    '            "index": "not_analyzed"' +
     '        }' +
     '    }' +
     '}'
@@ -79,8 +83,8 @@ end
 csv.each do |row|
     input = row.split(",")
 
-    # 0        1     2     3        4              5   6
-    # Kaycee,Edythe,Bode,private,Fictional Office,ZZ7,B
+    # 0        1     2     3        4              5  6   7         8
+    # Kaycee,Edythe,Bode,private,Fictional Office,ZZ7,B,1066224,HELENBURY BARON
     name = {
         'title_number' => input[5],
         'office' => input[4],
@@ -90,6 +94,13 @@ csv.each do |row|
         'surname' => input[2],
         'full_name' => input[0] + ' ' + input[1] + ' ' + input[2]
     }
+
+    if input[7] != '' # Data contains a complex name
+        name['number'] = input[7]
+        name['full_name'] = input[8]
+    else
+        name['number'] = nil
+    end
 
     nameBody = name.to_json
     response = http.request( Net::HTTP::Post.new( '/index/names' ), nameBody )

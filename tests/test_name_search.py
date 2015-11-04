@@ -1,3 +1,4 @@
+
 from application.routes import app
 from unittest import mock
 from application.search import search, phonetic_search, distance_search, combined_search
@@ -152,3 +153,10 @@ class TestWorking:
         d = search({'foo': 'bar'})
         assert len(d) == 1
         assert d[0]['title_number'] == 'ZZ826242'
+
+    @mock.patch('application.search.elastic.search')
+    def test_search_route_exact(self, es):
+        self.app.get('/search?name=Bob&type=exact')
+        query = es.call_args[1]['body']
+        name = query['query']['filtered']['filter']['term']['full_name']
+        assert name == 'Bob'

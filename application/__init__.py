@@ -45,6 +45,10 @@ mapping = {
                     "analyzer": "dbl_metaphone"
                 }
             }
+        },
+        "full_name": {
+            "type": "string",
+            "index": "not_analyzed"
         }
     }
 }
