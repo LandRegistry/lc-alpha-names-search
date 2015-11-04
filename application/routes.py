@@ -1,6 +1,7 @@
 from application import app
 from flask import Response, request
-from application.search import elastic, phonetic_search, distance_search, combined_search
+from application.search import elastic, phonetic_search, distance_search, combined_search, \
+    exact_search
 import logging
 import json
 import requests
@@ -45,11 +46,13 @@ def add_index_entry():
             'sub_register': item['sub_register'],
             'name_type': item['name_type']
         }
+        # TODO: accept incoming complex names...
 
         if item['name_type'] == 'Private':
             index_item['forenames'] = " ".join(item['registered_proprietor']['forenames'])
             index_item['surname'] = item['registered_proprietor']['surname']
             index_item['full_name'] = index_item['forenames'] + ' ' + index_item['surname']
+            # index_item['name_number'] = None  TODO or not? just atypical names the same?
 
         result = elastic.index(index='index', doc_type='names', body=index_item)
         logging.info(result['created'])
@@ -59,24 +62,39 @@ def add_index_entry():
 
 @app.route('/search', methods=['GET'])
 def search_by_name():
-    if 'forename' not in request.args or 'surname' not in request.args:
-        logging.error('Forename or surname missing')
-        return Response(status=400)
-
-    forename = request.args['forename']
-    surname = request.args['surname']
+    # if 'forename' not in request.args or 'surname' not in request.args:
+    #     logging.error('Forename or surname missing')
+    #     return Response(status=400)
 
     search_type = app.config['SEARCH_TYPE']
     if 'type' in request.args:
         search_type = request.args['type']
 
-    result = []
+    surname = forename = name = ''
+
+    if search_type in ['phonetic', 'distance', 'combined']:
+        if 'forename' not in request.args or 'surname' not in request.args:
+            logging.error('Forename or surname missing')
+            return Response(status=400)
+        forename = request.args['forename']
+        surname = request.args['surname']
+    elif search_type == 'exact':
+        if 'name' not in request.args:
+            logging.error('Forename or surname missing')
+            return Response(status=400)
+        name = request.args['name']
+    else:
+        logging.error('Invalid search type')
+        return Response(status=400)
+
     if search_type == 'phonetic':
         result = phonetic_search(forename, surname)
     elif search_type == 'distance':
         result = distance_search(forename, surname)
     elif search_type == 'combined':
         result = combined_search(forename, surname)
+    elif search_type == 'exact':
+        result = exact_search(name)
     else:
         return Response(status=400)
 
