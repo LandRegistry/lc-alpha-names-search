@@ -61,8 +61,8 @@ setup_logging(app.config['DEBUG'])
 response = requests.get("http://localhost:9200/index/_mapping/names")
 if response.status_code == 404:
     resp = requests.put("http://localhost:9200/index", data=json.dumps(metaphone), headers={'Content-Type': 'application/json'})
-    logging.info('Add Filters: ' + resp.status_code)
+    logging.info('Add Filters: ' + str(resp.status_code))
     resp = requests.put("http://localhost:9200/index/_mapping/names", data=json.dumps(mapping), headers={'Content-Type': 'application/json'})
-    logging.info('Map Fields: ' + resp.status_code)
+    logging.info('Map Fields: ' + str(resp.status_code))
 else:
     logging.info('Mappings already exist')
