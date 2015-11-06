@@ -137,3 +137,20 @@ def exact_search(full_name):
         }
     }
     return search(query)
+
+
+def get_for_title_number(title):
+    query = {
+        'size': 100000000,
+        'query': {
+            'filtered': {
+                'query': {'match_all': {}},
+                'filter': {
+                    'term': {
+                        'title_number': title
+                    }
+                }
+            }
+        }
+    }
+    return elastic.search(index='index', body=query)['hits']['hits']

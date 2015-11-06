@@ -49,6 +49,10 @@ mapping = {
         "full_name": {
             "type": "string",
             "index": "not_analyzed"
+        },
+        "title_number": {
+            "type": "string",
+            "index": "not_analyzed"
         }
     }
 }
