@@ -49,6 +49,10 @@ mapping = {
         "full_name": {
             "type": "string",
             "index": "not_analyzed"
+        },
+        "title_number": {
+            "type": "string",
+            "index": "not_analyzed"
         }
     }
 }
@@ -59,7 +63,7 @@ app.config.from_object(os.environ.get('SETTINGS'))
 setup_logging(app.config['DEBUG'])
 
 response = requests.get("http://localhost:9200/index/_mapping/names")
-if response.status_code == 404:
+if response.status_code == 404: # pragma: no cover
     resp = requests.put("http://localhost:9200/index", data=json.dumps(metaphone), headers={'Content-Type': 'application/json'})
     logging.info('Add Filters: ' + str(resp.status_code))
     resp = requests.put("http://localhost:9200/index/_mapping/names", data=json.dumps(mapping), headers={'Content-Type': 'application/json'})

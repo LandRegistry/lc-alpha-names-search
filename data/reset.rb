@@ -58,7 +58,7 @@ mapping = '{' +
 
 
 http = Net::HTTP.new( 'localhost', 9200 )
-
+http.request( Net::HTTP::Delete.new( '/index' ) )
 response = http.request(Net::HTTP::Get.new("/index/_mapping/names"))
 
 if response.code == "404"
@@ -82,35 +82,3 @@ else
         puts 'Index exists'
     end
 end
-exit
-
-csv.each do |row|
-    input = row.split(",")
-
-    # 0        1     2     3        4         5          6   7         8
-    #  Simon,Trett,Smith,Private,Sole,Fictional Office,ZZ201,B,  COMPLEX NAME
-    name = {
-        'title_number' => input[6],
-        'office' => input[5],
-        'sub_register' => input[7],
-        'name_type' => input[3],
-        'forenames' => (input[0] + ' ' + input[1]).strip,
-        'surname' => input[2],
-        'full_name' => (input[0] + ' ' + input[1] + ' ' + input[2]).strip,
-        'prop_type' => input[4]
-    }
-
-    unless input[8].nil? # Data contains a complex name
-        name['full_name'] = input[8]
-    end
-
-    nameBody = name.to_json
-    response = http.request( Net::HTTP::Post.new( '/index/names' ), nameBody )
-end
-
-
-
-
-
-
-
