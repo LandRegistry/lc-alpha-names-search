@@ -122,35 +122,25 @@ def combined_search(forename, surname):
     return search(query)
 
 
-def exact_search(full_name):
-    query = {
+def get_search_body(term):
+    return {
         'size': 100000000,
         'query': {
             'filtered': {
                 'query': {'match_all': {}},
                 'filter': {
-                    'term': {
-                        'full_name': full_name
-                    }
+                    'term': term
                 }
             }
         }
     }
+
+
+def exact_search(full_name):
+    query = get_search_body({'full_name': full_name})
     return search(query)
 
 
 def get_for_title_number(title):
-    query = {
-        'size': 100000000,
-        'query': {
-            'filtered': {
-                'query': {'match_all': {}},
-                'filter': {
-                    'term': {
-                        'title_number': title
-                    }
-                }
-            }
-        }
-    }
+    query = get_search_body({'title_number': title})
     return elastic.search(index='index', body=query)['hits']['hits']

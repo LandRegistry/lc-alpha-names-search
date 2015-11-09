@@ -62,6 +62,7 @@ mock_es_search = {
     'return_value': returndata
 }
 
+
 class TestWorking:
     def setup_method(self, method):
         self.app = app.test_client()
@@ -76,7 +77,6 @@ class TestWorking:
     def test_healthcheck(self, mock_put, mock_get, mock_elastic):
         response = self.app.get('/health')
         assert response.status_code == 200
-
 
     @mock.patch('application.routes.elastic')
     @mock.patch('requests.get', return_value=FakeResponse(status_code=200))
