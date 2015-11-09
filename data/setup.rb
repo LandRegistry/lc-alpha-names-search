@@ -82,7 +82,6 @@ else
         puts 'Index exists'
     end
 end
-exit
 
 csv.each do |row|
     input = row.split(",")
