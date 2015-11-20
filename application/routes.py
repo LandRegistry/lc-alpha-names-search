@@ -1,7 +1,6 @@
 from application import app
 from flask import Response, request
-from application.search import elastic, phonetic_search, distance_search, combined_search, \
-    exact_search, get_for_title_number
+from application.search import elastic, exact_search_full, get_for_title_number, exact_search_structured
 import logging
 import json
 import requests
@@ -29,7 +28,7 @@ def healthcheck():
     return Response(json.dumps(result), status=status, mimetype='application/json')
 
 
-@app.route('/names', methods=['POST'])
+@app.route('/proprietors', methods=['POST'])
 def add_index_entry():
     if request.headers['Content-Type'] != "application/json":
         return Response(status=415)
@@ -80,41 +79,18 @@ def add_index_entry():
     return Response(status=201)
 
 
-@app.route('/search', methods=['GET'])
+@app.route('/proprietors', methods=['GET'])
 def search_by_name():
-    search_type = app.config['SEARCH_TYPE']
-    if 'type' in request.args:
-        search_type = request.args['type']
-
-    surname = forename = name = ''
-
-    if search_type in ['phonetic', 'distance', 'combined']:
-        if 'forename' not in request.args or 'surname' not in request.args:
-            logging.error('Forename or surname missing')
-            return Response('Forename or surname missing', status=400)
-        forename = request.args['forename']
-        surname = request.args['surname']
-
-    elif search_type == 'exact':
-        if 'name' not in request.args:
-            logging.error('Name is missing')
-            return Response("Name not provided", status=400)
-        name = request.args['name']
-
+    if 'forenames' in request.args and 'surname' in request.args:
+        name = {
+            'forenames': request.args['forenames'].split(' '),
+            'surname': request.args['surname']
+        }
+        result = exact_search_structured(name)
+    elif 'fullname' in request.args:
+        name = request.args['fullname']
+        result = exact_search_full(name)
     else:
-        logging.error('Invalid search type')
-        return Response(status=400)
+        return Response('Either fullname or both forenames and surname must be provided', status=400)
 
-    if search_type == 'phonetic':
-        result = phonetic_search(forename, surname)
-    elif search_type == 'distance':
-        result = distance_search(forename, surname)
-    elif search_type == 'combined':
-        result = combined_search(forename, surname)
-    elif search_type == 'exact':
-        result = exact_search(name)
-    else:
-        return Response('Invalid search type: ' + search_type, status=400)
-
-    # TODO: process results...
     return Response(json.dumps(result), status=200, mimetype='application/json')

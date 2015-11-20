@@ -8,16 +8,10 @@ csv = File.open("#{dir}/names.csv").read.split(/\r?\n/)
 metaphone = '{' +
     '    "settings": {' +
     '        "analysis": {' +
-    '            "filter": {' +
-    '                "dbl_metaphone": {' +
-    '                    "type": "phonetic",' +
-    '                    "encoder": "double_metaphone"' +
-    '                }' +
-    '            },' +
     '            "analyzer": {' +
-    '                "dbl_metaphone": {' +
-    '                    "tokenizer": "standard",' +
-    '                    "filter": "dbl_metaphone"' +
+    '                "string_lowercase": {' +
+    '                    "tokenizer": "keyword",' +
+    '                    "filter": "lowercase"' +
     '                }' +
     '            }' +
     '        }' +
@@ -27,27 +21,9 @@ metaphone = '{' +
 # maps some fields...
 mapping = '{' +
     '    "properties": {' +
-    '        "surname": {' +
-    '            "type": "string",' +
-    '            "fields": {' +
-    '                "phonetic": {' +
-    '                    "type": "string",' +
-    '                    "analyzer": "dbl_metaphone"' +
-    '                }' +
-    '            }' +
-    '        },' +
-    '        "forenames": {' +
-    '            "type": "string",' +
-    '            "fields": {' +
-    '                "phonetic": {' +
-    '                    "type": "string",' +
-    '                    "analyzer": "dbl_metaphone"' +
-    '                }' +
-    '            }' +
-    '        },' +
     '        "full_name": {' +
     '            "type": "string",' +
-    '            "index": "not_analyzed"' +
+    '            "analyzer": "string_lowercase"' +
     '        },' +
     '        "title_number": {' +
     '            "type": "string",' +
@@ -89,18 +65,18 @@ csv.each do |row|
     # 0        1     2     3        4         5          6   7         8
     #  Simon,Trett,Smith,Private,Sole,Fictional Office,ZZ201,B,  COMPLEX NAME
     name = {
-        'title_number' => input[6],
-        'office' => input[5],
-        'sub_register' => input[7],
-        'name_type' => input[3],
-        'forenames' => (input[0] + ' ' + input[1]).strip,
-        'surname' => input[2],
-        'full_name' => (input[0] + ' ' + input[1] + ' ' + input[2]).strip,
-        'prop_type' => input[4]
+        'title_number' => input[5],
+        'office' => input[4],
+        'sub_register' => input[6],
+        'name_type' => input[2],
+        'forenames' => input[0],
+        'surname' => input[1],
+        'full_name' => (input[0] + ' ' + input[1]).strip,
+        'prop_type' => input[3]
     }
 
-    unless input[8].nil? # Data contains a complex name
-        name['full_name'] = input[8]
+    unless input[7].nil? # Data contains a complex name
+        name['full_name'] = input[7]
     end
 
     nameBody = name.to_json

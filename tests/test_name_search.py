@@ -1,7 +1,6 @@
-
 from application.routes import app
 from unittest import mock
-from application.search import search, phonetic_search, distance_search, combined_search
+from application.search import search
 import json
 
 
@@ -47,17 +46,6 @@ returndata = {
     }
 }
 
-# mock_es_search = {
-#     'return_value': mock.Mock(**{
-#         'elastic.return_value': returndata
-#     })
-# }
-
-# mock_es_search = {
-#     'return_value': mock.Mock(**{
-#         'search.return_value': returndata
-#     })
-# }
 mock_es_search = {
     'return_value': returndata
 }
@@ -82,7 +70,7 @@ class TestWorking:
     @mock.patch('requests.get', return_value=FakeResponse(status_code=200))
     def test_add_index_entry(self, mock_get, mock_elastic):
         headers = {'Content-Type': 'application/json'}
-        response = self.app.post('/names', data=index_entry, headers=headers)
+        response = self.app.post('/proprietors', data=index_entry, headers=headers)
         assert response.status_code == 201
 
         # Confirm that the ES APIs were called:
@@ -95,57 +83,13 @@ class TestWorking:
         assert kwargs['index'] == 'index'
 
     @mock.patch('application.search.elastic.search')
-    def test_phonetic_search(self, me):
-        result = phonetic_search('Bob', 'Howard')
-        query = me.call_args[1]['body']
-
-        # Ensure phonetic query passed to ES...
-        assert query['query']['bool']['must'][0]['match']['forenames.phonetic']['query'] == 'Bob'
-
-    @mock.patch('application.search.elastic.search')
-    def test_distance_search(self, me):
-        result = distance_search('Robert', 'Howard')
-        query = me.call_args[1]['body']
-
-        # Ensure distance query passed to ES...
-        assert query['query']['bool']['must'][0]['match']['forenames']['query'] == 'Robert'
-        assert query['query']['bool']['must'][0]['match']['forenames']['fuzziness'] == '1'
-
-    @mock.patch('application.search.elastic.search')
-    def test_combined_search(self, me):
-        result = combined_search('Robert', 'Howard')
-        query = me.call_args[1]['body']
-        print(query)
-        # Ensure combined query passed to ES...
-        must = query['query']['bool']['must']
-        assert must[0]['bool']['should'][0]['match']['surname']['query'] == 'Howard'
-
-    @mock.patch('application.search.elastic.search')
-    def test_search_route_phonetic(self, es):
-        self.app.get('/search?forename=Bob&surname=Howard&type=phonetic')
+    def test_search_route(self, es):
+        self.app.get('/proprietors?forenames=Bob&surname=Howard')
         query = es.call_args[1]['body']
-        assert query['query']['bool']['must'][0]['match']['forenames.phonetic']['query'] == 'Bob'
-
-    @mock.patch('application.search.elastic.search')
-    def test_search_route_distance(self, es):
-        self.app.get('/search?forename=Robert&surname=Howard&type=distance')
-        query = es.call_args[1]['body']
-        assert query['query']['bool']['must'][0]['match']['forenames']['query'] == 'Robert'
-        assert query['query']['bool']['must'][0]['match']['forenames']['fuzziness'] == '1'
-
-    @mock.patch('application.search.elastic.search')
-    def test_search_route_combined(self, es):
-        self.app.get('/search?forename=Bob&surname=Howard&type=combined')
-        query = es.call_args[1]['body']
-        must = query['query']['bool']['must']
-        assert must[0]['bool']['should'][0]['match']['surname']['query'] == 'Howard'
+        assert query['query']['bool']['should'][0]['match']['full_name'] == 'Bob Howard'
 
     def test_search_route_name_missing(self):
-        result = self.app.get('/search?forename=Bob')
-        assert result.status_code == 400
-
-    def test_search_route_invalid_type(self):
-        result = self.app.get('/search?forename=Bob&surname=Howard&type=magical_mystery')
+        result = self.app.get('/proprietors?forenames=Bob')
         assert result.status_code == 400
 
     @mock.patch('application.search.elastic.search', **mock_es_search)
@@ -156,7 +100,7 @@ class TestWorking:
 
     @mock.patch('application.search.elastic.search')
     def test_search_route_exact(self, es):
-        self.app.get('/search?name=Bob&type=exact')
+        self.app.get('/proprietors?fullname=Bob')
         query = es.call_args[1]['body']
         name = query['query']['filtered']['filter']['term']['full_name']
         assert name == 'Bob'
