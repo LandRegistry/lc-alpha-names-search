@@ -1,5 +1,6 @@
 from elasticsearch import Elasticsearch
 import logging
+import pprint
 
 
 elastic = Elasticsearch()
@@ -17,109 +18,12 @@ def search(query):
     return returns
 
 
-def forename_phonetic_match(forename):
-    return {
-        'match': {
-            'forenames.phonetic': {
-                'query': forename,
-                'operator': 'and'
-            }
-        }
-    }
-
-
-def forename_distance_match(forename, distance):
-    return {
-        'match': {
-            'forenames': {
-                'query': forename,
-                'operator': 'and',
-                'fuzziness': str(distance)
-            }
-        }
-    }
-
-
-def surname_phonetic_match(surname):
-    return {
-        'match': {
-            'surname.phonetic': {
-                'query': surname
-            }
-        }
-    }
-
-
-def surname_distance_match(surname, distance):
-    return {
-        'match': {
-            'surname': {
-                'query': surname,
-                'fuzziness': str(distance)
-            }
-        }
-    }
-
-
-def es_and(query1, query2):
+def es_or(query_list):
     return {
         'bool': {
-            'must': [query1, query2]
+            'should': query_list
         }
     }
-
-
-def es_or(query1, query2):
-    return {
-        'bool': {
-            'should': [query1, query2],
-            'minimum_should_match': 1
-        }
-    }
-
-
-def phonetic_search(forename, surname):
-    logging.info('Phonetic Search')
-    # Get matches based on the double-metaphone algorithm
-    query = {
-        'size': 100000000,
-        'query': es_and(forename_phonetic_match(forename),
-                        surname_phonetic_match(surname))
-
-    }
-    print(query)
-    return search(query)
-
-
-def distance_search(forename, surname):
-    logging.info('Distance Search')
-    # Get matches based on the Levenstein distance algorithm
-    forename_distance = round(len(forename) / 6)
-    surname_distance = round(len(surname) / 3)
-
-    query = {
-        'size': 100000000,
-        'query': es_and(forename_distance_match(forename, forename_distance),
-                        surname_distance_match(surname, surname_distance))
-    }
-    return search(query)
-
-
-def combined_search(forename, surname):
-    logging.info('Combined Search')
-    # Get results based on both algorithms
-    forename_distance = round(len(forename) / 6)
-    surname_distance = round(len(surname) / 3)
-    query = {
-        'size': 100000000,
-        'query': es_and(
-            es_or(surname_distance_match(surname, surname_distance),
-                  surname_phonetic_match(surname)),
-            es_or(forename_distance_match(forename, forename_distance),
-                  forename_phonetic_match(forename))
-        )
-    }
-    return search(query)
 
 
 def get_search_body(term):
@@ -136,8 +40,31 @@ def get_search_body(term):
     }
 
 
-def exact_search(full_name):
+def exact_search_full(full_name):
     query = get_search_body({'full_name': full_name})
+    return search(query)
+
+
+def exact_search_structured(name):
+    # Generate variants of the full name by squashing adjecent forenames together
+    forenames = []
+    for i in range(len(name['forenames']) - 1):
+        before = name['forenames'][0:i]
+        after = name['forenames'][i + 2:]
+        combine = name['forenames'][i:i + 2]
+        fn = ' '.join(before) + ' ' + ''.join(combine) + ' ' + ' '.join(after)
+        forenames.append(fn.strip())
+
+    fullname = ' '.join(name['forenames']) + ' ' + name['surname']
+    search_array = [{"match": {"full_name": fullname}}]
+    for forename in forenames:
+        search_name = forename + ' ' + name['surname']
+        search_array.append({"match": {"full_name": search_name}})
+
+    query = {
+        'size': 100000000,
+        'query': es_or(search_array)
+    }
     return search(query)
 
 
